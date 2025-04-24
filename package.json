@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "npx nodemon",
     "build": "rimraf ./dist && tsc && tsc-alias",
@@ -11,7 +12,8 @@
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --check .",
     "prettier:fix": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "commit": "commit"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
+    "@commitlint/prompt-cli": "^19.8.0",
     "@eslint/js": "^9.25.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
