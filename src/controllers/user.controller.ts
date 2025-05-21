@@ -2,7 +2,15 @@ import { Request, Response } from 'express'
 import { User } from '~/models/user.model.js'
 
 export const getUsers = async (_req: Request, res: Response) => {
-  const users = await User.find()
+  // const users = await User.find()
+  const users = [
+    {
+      id: 1,
+      name: 'John Doe',
+      email: 'join@gmail.com'
+    }
+  ]
+
   res.json(users)
 }
 

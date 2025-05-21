@@ -1,8 +1,9 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { connectDB } from './config/db.js'
+// import { connectDB } from './config/db.js'
 import userRoutes from './routes/user.route.js'
+// import { sum } from './utils/sum.js'
 
 dotenv.config()
 
@@ -16,6 +17,6 @@ app.use(express.json())
 app.use('/api/users', userRoutes)
 
 // DB Connect
-connectDB()
+// connectDB()
 
 export default app
