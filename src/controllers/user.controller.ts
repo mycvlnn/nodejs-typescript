@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { User } from '~/models/user.model.js'
+import { getUserCollection, IUser } from '~/models/user.model.js'
 
 export const loginUser = (req: Request, res: Response) => {
   const { email, password } = req.body
@@ -14,21 +14,36 @@ export const loginUser = (req: Request, res: Response) => {
 }
 
 export const getUsers = async (_req: Request, res: Response) => {
-  // const users = await User.find()
-  const users = [
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'join@gmail.com'
-    }
-  ]
-
-  res.json(users)
+  try {
+    const userCollection = getUserCollection()
+    const users = await userCollection.find().toArray()
+    res.json(users)
+  } catch (error: any) {
+    console.error('Error fetching users:', error)
+    res.status(500).json({ message: 'Error fetching users', error: error.message })
+  }
 }
 
 export const createUser = async (req: Request, res: Response) => {
-  const { name, email } = req.body
-  const user = new User({ name, email })
-  await user.save()
-  res.status(201).json(user)
+  const { name, email, phoneNumber, gender } = req.body
+  console.log({ reqBody: req.body })
+
+  const user: IUser = {
+    name,
+    email,
+    phoneNumber,
+    gender,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+
+  try {
+    const userCollection = getUserCollection()
+    const result = await userCollection.insertOne(user)
+    console.log('User created:', result)
+    res.status(201).json({ ...user, _id: result.insertedId })
+  } catch (error: any) {
+    console.error('Error creating user:', error)
+    res.status(400).json({ message: 'Error creating user', error: error.message })
+  }
 }

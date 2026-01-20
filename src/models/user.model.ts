@@ -1,8 +1,16 @@
-import mongoose from 'mongoose'
+import { MongoConnection } from '~/config/mongo-connection.js'
 
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true }
-})
+export interface IUser {
+  _id?: string
+  name: string
+  email: string
+  phoneNumber: string
+  gender?: string
+  createdAt?: Date
+  updatedAt?: Date
+}
 
-export const User = mongoose.model('User', userSchema)
+export const getUserCollection = () => {
+  const db = MongoConnection.getDB()
+  return db.collection<IUser>('users')
+}
