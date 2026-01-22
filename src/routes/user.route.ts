@@ -1,10 +1,17 @@
 import express from 'express'
-import { createUser, getUsers, loginUser } from '~/controllers/user.controller.js'
-import { loginValidator } from '~/middlewares/auth.middleware.js'
+import { loginUser, getUsers, getUser, createUser, updateUser, deleteUser } from '~/controllers/user.controller.js'
+import { validateLogin, validateCreateUser, validateUpdateUser } from '~/validations/user.validation.js'
 
 const router = express.Router()
-router.post('/login', loginValidator, loginUser)
+
+// Auth routes
+router.post('/login', validateLogin, loginUser)
+
+// User CRUD routes
 router.get('/', getUsers)
-router.post('/', createUser)
+router.get('/:id', getUser)
+router.post('/', validateCreateUser, createUser)
+router.put('/:id', validateUpdateUser, updateUser)
+router.delete('/:id', deleteUser)
 
 export default router

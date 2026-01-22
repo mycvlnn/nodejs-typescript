@@ -6,9 +6,9 @@ my-app/
 ├── src/
 │ ├── config/ # Cấu hình môi trường, database, logger, v.v.
 │ ├── controllers/ # Xử lý request từ client, gọi services
-│ ├── services/ # Chứa logic nghiệp vụ
+│ ├── services/ # Chứa logic nghiệp vụ -> Gọi Models để thao tác DB
 │ ├── routes/ # Định nghĩa các route, liên kết controller
-│ ├── models/ # Định nghĩa schema (Mongoose hoặc ORM models)
+│ ├── models/ # Định nghĩa schema (Mongoose hoặc ORM models), thao tác DB
 │ ├── middlewares/ # Middleware như auth, error handling,...
 │ ├── utils/ # Hàm helper, function tái sử dụng
 │ ├── validations/ # Validate input (Joi, Zod,...)

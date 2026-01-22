@@ -1,7 +1,7 @@
 import { MongoClient, Db, ServerApiVersion } from 'mongodb'
-import { envConfig } from './env-config.js'
+import { envConfig } from '~/config/env-config.js'
 
-export class MongoConnection {
+export class MongoDBService {
   private static client: MongoClient
   private static db: Db
 
@@ -17,7 +17,6 @@ export class MongoConnection {
 
       await this.client.connect()
       this.db = this.client.db(envConfig.mongoDbName)
-      console.log('✅ MongoDB connected')
     }
   }
 
@@ -32,6 +31,17 @@ export class MongoConnection {
     const db = this.getDB()
     await db.command({ ping: 1 })
     console.log('🏓 Pinged MongoDB deployment successfully.')
+  }
+
+  static async initializeModels(): Promise<void> {
+    // Import và initialize tất cả models
+    const { UserModel } = await import('~/models/user.model.js')
+    await UserModel.initialize()
+    // Thêm các models khác ở đây khi cần
+    // const { ProductModel } = await import('~/models/product.model.js')
+    // await ProductModel.initialize()
+
+    console.log('✅ All models initialized with indexes')
   }
 
   static async close(): Promise<void> {

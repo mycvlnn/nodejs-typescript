@@ -1,49 +1,98 @@
-import { Request, Response } from 'express'
-import { getUserCollection, IUser } from '~/models/user.model.js'
+import { Request, Response, NextFunction } from 'express'
+import { BaseController } from '~/controllers/base.controller.js'
+import { UserService } from '~/services/user.service.js'
 
-export const loginUser = (req: Request, res: Response) => {
-  const { email, password } = req.body
-  // Here you would typically check the email and password against your database
-  if (email === 'animous@gmail.com' && password === '123456') {
-    // Simulate a successful login
-    res.status(200).json({ message: 'Login successful', user: { email } })
-  } else {
-    // Simulate a failed login
-    res.status(401).json({ message: 'Invalid email or password' })
+/**
+ * User Controller - HTTP Request Handlers
+ * Chỉ xử lý HTTP request/response, không chứa business logic
+ */
+export class UserController extends BaseController {
+  private userService: UserService
+
+  constructor() {
+    super()
+    this.userService = new UserService()
+  }
+
+  /**
+   * Login user
+   */
+  loginUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, password } = req.body
+      const result = await this.userService.loginUser(email, password)
+      this.sendSuccess(res, { message: 'Login successful', ...result })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Get all users
+   */
+  getUsers = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const users = await this.userService.getAllUsers()
+      this.sendSuccess(res, users)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Get user by ID
+   */
+  getUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params
+      const user = await this.userService.getUserById(id)
+      this.sendSuccess(res, user)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Create new user
+   */
+  createUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userData = req.body
+      const user = await this.userService.createUser(userData)
+      this.sendResponse(res, 201, { status: 'success', data: user })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Update user
+   */
+  updateUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params
+      const userData = req.body
+      const user = await this.userService.updateUser(id, userData)
+      this.sendSuccess(res, user)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Delete user
+   */
+  deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params
+      await this.userService.deleteUser(id)
+      this.sendSuccess(res, { message: 'User deleted successfully' })
+    } catch (error) {
+      next(error)
+    }
   }
 }
 
-export const getUsers = async (_req: Request, res: Response) => {
-  try {
-    const userCollection = getUserCollection()
-    const users = await userCollection.find().toArray()
-    res.json(users)
-  } catch (error: any) {
-    console.error('Error fetching users:', error)
-    res.status(500).json({ message: 'Error fetching users', error: error.message })
-  }
-}
-
-export const createUser = async (req: Request, res: Response) => {
-  const { name, email, phoneNumber, gender } = req.body
-  console.log({ reqBody: req.body })
-
-  const user: IUser = {
-    name,
-    email,
-    phoneNumber,
-    gender,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-
-  try {
-    const userCollection = getUserCollection()
-    const result = await userCollection.insertOne(user)
-    console.log('User created:', result)
-    res.status(201).json({ ...user, _id: result.insertedId })
-  } catch (error: any) {
-    console.error('Error creating user:', error)
-    res.status(400).json({ message: 'Error creating user', error: error.message })
-  }
-}
+// Export instances của các methods
+const userController = new UserController()
+export const { loginUser, getUsers, getUser, createUser, updateUser, deleteUser } = userController
