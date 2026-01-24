@@ -37,12 +37,6 @@ export class UserService {
    * Tạo user mới
    */
   async createUser(userData: IUserCreate): Promise<IUser> {
-    // Validate email đã tồn tại chưa
-    const existingUser = await UserModel.findByEmail(userData.email)
-    if (existingUser) {
-      throw new HttpException(409, 'Email already exists')
-    }
-
     try {
       // Hash password trước khi lưu
       const hashedPassword = await bcrypt.hash(userData.password, 10)
@@ -129,5 +123,13 @@ export class UserService {
       user: UserModel.toResponse(user) as IUser
       // token
     }
+  }
+
+  /**
+   * Check email exist
+   */
+  static async isEmailExist(email: string): Promise<boolean> {
+    const exists = await UserModel.existsByEmail(email)
+    return exists
   }
 }
