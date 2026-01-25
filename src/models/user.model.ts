@@ -113,6 +113,11 @@ export class UserModel {
     return count > 0
   }
 
+  static async existsByUsername(username: string): Promise<boolean> {
+    const count = await this.getCollection().countDocuments({ username }, { limit: 1 })
+    return count > 0
+  }
+
   /**
    * Lấy tất cả users
    */

@@ -132,4 +132,12 @@ export class UserService {
     const exists = await UserModel.existsByEmail(email)
     return exists
   }
+
+  /**
+   * Check username exist
+   */
+  static async isUsernameExist(username: string): Promise<boolean> {
+    const exists = await UserModel.existsByUsername(username)
+    return exists
+  }
 }
