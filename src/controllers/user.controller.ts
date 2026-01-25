@@ -53,13 +53,21 @@ export class UserController extends BaseController {
   }
 
   /**
-   * Create new user
+   * Create new user (Register)
    */
   createUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userData = req.body
-      const user = await this.userService.createUser(userData)
-      this.sendResponse(res, 201, { status: 'success', data: user })
+      const result = await this.userService.createUser(userData)
+      this.sendResponse(res, 201, {
+        status: 'success',
+        message: 'User registered successfully',
+        data: {
+          user: result.user,
+          access_token: result.access_token,
+          refresh_token: result.refresh_token
+        }
+      })
     } catch (error) {
       next(error)
     }
@@ -91,8 +99,106 @@ export class UserController extends BaseController {
       next(error)
     }
   }
+
+  /**
+   * Refresh access token
+   */
+  refreshToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { refreshToken } = req.body
+
+      if (!refreshToken) {
+        throw new Error('Refresh token is required')
+      }
+
+      const tokens = await this.userService.refreshToken(refreshToken)
+
+      this.sendSuccess(res, {
+        message: 'Token refreshed successfully',
+        ...tokens
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Logout từ thiết bị hiện tại
+   */
+  logout = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.userId
+      const { refreshToken } = req.body
+
+      if (!userId) {
+        throw new Error('User not authenticated')
+      }
+
+      if (!refreshToken) {
+        throw new Error('Refresh token is required')
+      }
+
+      await this.userService.logout(userId, refreshToken)
+
+      this.sendSuccess(res, {
+        message: 'Logout successful'
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Logout từ tất cả thiết bị
+   */
+  logoutAll = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.userId
+
+      if (!userId) {
+        throw new Error('User not authenticated')
+      }
+
+      await this.userService.logoutAll(userId)
+
+      this.sendSuccess(res, {
+        message: 'Logged out from all devices successfully'
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Get current user profile
+   */
+  getProfile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.userId
+
+      if (!userId) {
+        throw new Error('User not authenticated')
+      }
+
+      const user = await this.userService.getUserById(userId)
+      this.sendSuccess(res, user)
+    } catch (error) {
+      next(error)
+    }
+  }
 }
 
 // Export instances của các methods
 const userController = new UserController()
-export const { loginUser, getUsers, getUser, createUser, updateUser, deleteUser } = userController
+export const {
+  loginUser,
+  getUsers,
+  getUser,
+  createUser,
+  updateUser,
+  deleteUser,
+  refreshToken,
+  logout,
+  logoutAll,
+  getProfile
+} = userController

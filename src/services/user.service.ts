@@ -1,12 +1,23 @@
 import bcrypt from 'bcrypt'
 import { UserModel, IUser, IUserCreate, IUserUpdate, UserStatus } from '~/models/user.model.js'
+import { RefreshTokenModel } from '~/models/refresh-token.model.js'
 import { HttpException } from '~/core/http-exception.js'
+import { JWTUtils } from '~/utils/jwt.js'
+import { envConfig } from '~/config/env-config.js'
+import { TokenType } from '~/constants/enum.js'
 
 /**
  * User Service - Business Logic Layer
  * Chứa toàn bộ logic nghiệp vụ, validation, và xử lý dữ liệu
  */
 export class UserService {
+  getExpiresAt() {
+    const expiresAt = new Date()
+    const daysExpire = envConfig.jwtRefreshTokenExpiresIn?.toString().replace('d', '') as string
+    expiresAt.setDate(expiresAt.getDate() + Number(daysExpire))
+    return expiresAt
+  }
+
   /**
    * Lấy tất cả users (không trả về password)
    */
@@ -34,9 +45,13 @@ export class UserService {
   }
 
   /**
-   * Tạo user mới
+   * Tạo user mới (Register)
    */
-  async createUser(userData: IUserCreate): Promise<IUser> {
+  async createUser(userData: IUserCreate): Promise<{
+    user: IUser
+    access_token: string
+    refresh_token: string
+  }> {
     try {
       // Hash password trước khi lưu
       const hashedPassword = await bcrypt.hash(userData.password, 10)
@@ -47,8 +62,25 @@ export class UserService {
         password: hashedPassword
       })
 
-      return UserModel.toResponse(user) as IUser
+      // Generate JWT tokens
+      const tokens = JWTUtils.generateTokens({
+        userId: user._id!.toString(),
+        email: user.email
+      })
+
+      await RefreshTokenModel.create({
+        user_id: user._id!,
+        token: tokens.refreshToken,
+        expires_at: this.getExpiresAt()
+      })
+
+      return {
+        user: UserModel.toResponse(user) as IUser,
+        access_token: tokens.accessToken,
+        refresh_token: tokens.refreshToken
+      }
     } catch (error: any) {
+      if (error instanceof HttpException) throw error
       throw new HttpException(400, `Failed to create user: ${error.message}`)
     }
   }
@@ -99,7 +131,14 @@ export class UserService {
   /**
    * Login user
    */
-  async loginUser(email: string, password: string): Promise<{ user: IUser }> {
+  async loginUser(
+    email: string,
+    password: string
+  ): Promise<{
+    user: IUser
+    access_token: string
+    refresh_token: string
+  }> {
     const user = await UserModel.findByEmail(email)
 
     if (!user) {
@@ -116,12 +155,22 @@ export class UserService {
       throw new HttpException(401, 'Invalid email or password')
     }
 
-    // TODO: Generate JWT token here if needed
-    // const token = generateToken(user._id)
+    // Generate JWT tokens
+    const tokens = JWTUtils.generateTokens({
+      userId: user._id!.toString(),
+      email: user.email
+    })
+
+    await RefreshTokenModel.create({
+      user_id: user._id!,
+      token: tokens.refreshToken,
+      expires_at: this.getExpiresAt()
+    })
 
     return {
-      user: UserModel.toResponse(user) as IUser
-      // token
+      user: UserModel.toResponse(user) as IUser,
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken
     }
   }
 
@@ -139,5 +188,74 @@ export class UserService {
   static async isUsernameExist(username: string): Promise<boolean> {
     const exists = await UserModel.existsByUsername(username)
     return exists
+  }
+
+  /**
+   * Refresh access token
+   */
+  async refreshToken(refreshToken: string): Promise<{
+    access_token: string
+    refresh_token: string
+  }> {
+    // Verify refresh token
+    const decoded = JWTUtils.verifyToken(refreshToken)
+
+    if (decoded.type !== TokenType.RefreshToken) {
+      throw new HttpException(401, 'Invalid token type')
+    }
+
+    // Check if refresh token exists in database
+    const tokenDoc = await RefreshTokenModel.findByToken(refreshToken)
+
+    if (!tokenDoc) {
+      throw new HttpException(401, 'Invalid refresh token')
+    }
+
+    // Kiểm tra token còn hạn không
+    if (tokenDoc.expires_at < new Date()) {
+      await RefreshTokenModel.deleteByToken(refreshToken)
+      throw new HttpException(401, 'Refresh token expired')
+    }
+
+    // Get user info
+    const user = await UserModel.findById(tokenDoc.user_id)
+
+    if (!user) {
+      throw new HttpException(401, 'User not found')
+    }
+
+    // Xóa refresh token cũ
+    await RefreshTokenModel.deleteByToken(refreshToken)
+
+    // Generate new tokens
+    const tokens = JWTUtils.generateTokens({
+      userId: user._id!.toString(),
+      email: user.email
+    })
+
+    await RefreshTokenModel.create({
+      user_id: user._id!,
+      token: tokens.refreshToken,
+      expires_at: this.getExpiresAt()
+    })
+
+    return {
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken
+    }
+  }
+
+  /**
+   * Logout từ thiết bị hiện tại (xóa 1 refresh token)
+   */
+  async logout(userId: string, refreshToken: string): Promise<void> {
+    await RefreshTokenModel.deleteByUserAndToken(userId, refreshToken)
+  }
+
+  /**
+   * Logout từ tất cả thiết bị (xóa tất cả refresh tokens)
+   */
+  async logoutAll(userId: string): Promise<void> {
+    await RefreshTokenModel.deleteAllByUserId(userId)
   }
 }

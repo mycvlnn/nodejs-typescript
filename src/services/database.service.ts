@@ -36,7 +36,11 @@ export class MongoDBService {
   static async initializeModels(): Promise<void> {
     // Import và initialize tất cả models
     const { UserModel } = await import('~/models/user.model.js')
+    const { RefreshTokenModel } = await import('~/models/refresh-token.model.js')
+
     await UserModel.initialize()
+    await RefreshTokenModel.initialize()
+
     // Thêm các models khác ở đây khi cần
     // const { ProductModel } = await import('~/models/product.model.js')
     // await ProductModel.initialize()
