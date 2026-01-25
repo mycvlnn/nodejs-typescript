@@ -5,6 +5,7 @@ import { HttpException } from '~/core/http-exception.js'
  * Global Error Handler Middleware
  * Xử lý tất cả errors trong app
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorMiddleware = (error: Error | HttpException, req: Request, res: Response, _next: NextFunction) => {
   // Log error để debug
   console.error('Error occurred:', {
@@ -60,6 +61,6 @@ export const errorMiddleware = (error: Error | HttpException, req: Request, res:
   return res.status(500).json({
     status: 'error',
     statusCode: 500,
-    message: 'Internal server error'
+    message: error.message || 'Internal server error'
   })
 }
