@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { envConfig } from '~/config/env-config.js'
 import { TokenType } from '~/constants/enum.js'
+import { HTTP_STATUS } from '~/constants/http-status.js'
 import { HttpException } from '~/core/http-exception.js'
 
 export interface TokenPayload {
@@ -65,12 +66,21 @@ export class JWTUtils {
       return decoded
     } catch (error: any) {
       if (error.name === 'TokenExpiredError') {
-        throw new HttpException(401, 'Token expired')
+        throw new HttpException({
+          status: HTTP_STATUS.UNAUTHORIZED,
+          message: 'Token expired'
+        })
       }
       if (error.name === 'JsonWebTokenError') {
-        throw new HttpException(401, 'Invalid token')
+        throw new HttpException({
+          status: HTTP_STATUS.UNAUTHORIZED,
+          message: 'Invalid token'
+        })
       }
-      throw new HttpException(401, 'Token verification failed')
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: 'Token verification failed'
+      })
     }
   }
 

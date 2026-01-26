@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
-import { HttpException } from '~/core/http-exception.js'
+import omit from 'lodash/omit.js'
+import { HTTP_STATUS } from '~/constants/http-status.js'
+import { EntityError, HttpException } from '~/core/http-exception.js'
 
 /**
  * Global Error Handler Middleware
@@ -7,21 +9,8 @@ import { HttpException } from '~/core/http-exception.js'
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorMiddleware = (error: Error | HttpException, req: Request, res: Response, _next: NextFunction) => {
-  // Log error để debug
-  console.error('Error occurred:', {
-    message: error.message,
-    stack: error.stack,
-    path: req.path,
-    method: req.method
-  })
-
-  // Nếu là HttpException (custom error)
-  if (error instanceof HttpException) {
-    return res.status(error.status).json({
-      status: 'error',
-      statusCode: error.status,
-      message: error.message
-    })
+  if (error instanceof HttpException || error instanceof EntityError) {
+    return res.status(error.status).json(omit(error, 'status'))
   }
 
   // Xử lý MongoDB errors
@@ -33,7 +22,6 @@ export const errorMiddleware = (error: Error | HttpException, req: Request, res:
       const field = Object.keys(mongoError.keyPattern || {})[0]
       return res.status(409).json({
         status: 'error',
-        statusCode: 409,
         message: `${field} already exists`
       })
     }
@@ -42,7 +30,6 @@ export const errorMiddleware = (error: Error | HttpException, req: Request, res:
     if (mongoError.code === 121) {
       return res.status(400).json({
         status: 'error',
-        statusCode: 400,
         message: 'Validation failed: ' + mongoError.message
       })
     }
@@ -52,15 +39,13 @@ export const errorMiddleware = (error: Error | HttpException, req: Request, res:
   if (error.name === 'ValidationError') {
     return res.status(400).json({
       status: 'error',
-      statusCode: 400,
       message: error.message
     })
   }
 
   // Default error response
-  return res.status(500).json({
+  return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     status: 'error',
-    statusCode: 500,
     message: error.message || 'Internal server error'
   })
 }

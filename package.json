@@ -27,6 +27,7 @@
     "express": "^5.1.0",
     "express-validator": "^7.3.1",
     "jsonwebtoken": "^9.0.3",
+    "lodash": "^4.17.23",
     "mongodb": "^6.16.0",
     "mongoose": "^8.13.2"
   },
@@ -38,6 +39,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/lodash": "^4.17.23",
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",

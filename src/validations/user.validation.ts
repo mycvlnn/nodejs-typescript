@@ -1,4 +1,6 @@
 import { checkSchema } from 'express-validator'
+import { HTTP_STATUS } from '~/constants/http-status.js'
+import { HttpException } from '~/core/http-exception.js'
 import { UserService } from '~/services/user.service.js'
 import { validate } from '~/utils/validate.js'
 
@@ -112,6 +114,12 @@ export const createUserValidator = validate(
 
 export const updateUserValidator = validate(
   checkSchema({
+    id: {
+      in: ['params'],
+      notEmpty: {
+        errorMessage: 'User ID is required'
+      }
+    },
     name: {
       in: ['body'],
       optional: true,
@@ -128,6 +136,15 @@ export const updateUserValidator = validate(
       optional: true,
       isEmail: {
         errorMessage: 'Invalid email format'
+      },
+      custom: {
+        options: async (value) => {
+          const isUserExist = await UserService.isEmailExist(value)
+          if (isUserExist) {
+            throw new Error('Email already exists')
+          }
+          return true
+        }
       }
     }
   })
