@@ -1,6 +1,5 @@
 import { checkSchema } from 'express-validator'
-import { HTTP_STATUS } from '~/constants/http-status.js'
-import { HttpException } from '~/core/http-exception.js'
+import { USER_MESSAGES } from '~/constants/messages.js'
 import { UserService } from '~/services/user.service.js'
 import { validate } from '~/utils/validate.js'
 
@@ -10,32 +9,68 @@ export const createUserValidator = validate(
       in: ['body'],
       trim: true,
       notEmpty: {
-        errorMessage: 'Name is required',
+        errorMessage: USER_MESSAGES.NAME_REQUIRED,
         bail: true // Nếu không có name thì không cần kiểm tra tiếp
       },
       isString: {
-        errorMessage: 'Name must be a string'
+        errorMessage: USER_MESSAGES.NAME_MUST_BE_STRING
       },
       isLength: {
         options: { min: 5, max: 100 },
-        errorMessage: 'Name must be between 5 and 100 characters'
+        errorMessage: USER_MESSAGES.NAME_LENGTH
       }
     },
     email: {
       in: ['body'],
       trim: true,
       notEmpty: {
-        errorMessage: 'Email is required',
-        bail: true // Nếu không có email thì không cần kiểm tra tiếp
+        errorMessage: USER_MESSAGES.EMAIL_REQUIRED,
+        bail: true
       },
       isEmail: {
-        errorMessage: 'Invalid email format'
+        errorMessage: USER_MESSAGES.EMAIL_INVALID
       },
       custom: {
         options: async (value) => {
           const isUserExist = await UserService.isEmailExist(value)
           if (isUserExist) {
-            throw new Error('Email already exists')
+            throw new Error(USER_MESSAGES.EMAIL_EXISTS)
+          }
+          return true
+        }
+      }
+    },
+    password: {
+      in: ['body'],
+      notEmpty: {
+        errorMessage: USER_MESSAGES.PASSWORD_REQUIRED,
+        bail: true // Nếu không có password thì không cần kiểm tra tiếp
+      },
+      isLength: {
+        options: { min: 6, max: 50 },
+        errorMessage: USER_MESSAGES.PASSWORD_LENGTH,
+        bail: true
+      },
+      isStrongPassword: {
+        options: {
+          minLowercase: 1,
+          minUppercase: 1,
+          minNumbers: 1,
+          minSymbols: 1
+        },
+        errorMessage: USER_MESSAGES.PASSWORD_NOT_STRONG_ENOUGH
+      }
+    },
+    confirm_password: {
+      in: ['body'],
+      notEmpty: {
+        errorMessage: USER_MESSAGES.PASSWORD_CONFIRM_REQUIRED,
+        bail: true
+      },
+      custom: {
+        options: (value, { req }) => {
+          if (value !== req.body.password) {
+            throw new Error(USER_MESSAGES.PASSWORDS_DO_NOT_MATCH)
           }
           return true
         }
@@ -43,71 +78,71 @@ export const createUserValidator = validate(
     },
     date_of_birth: {
       in: ['body'],
-      optional: true,
-      isISO8601: {
-        errorMessage: 'Date of birth must be a valid date' // ISO 8601 date format, e.g., "2023-10-15", "2023-10-15T13:45:30Z"
-      }
-    },
-    password: {
-      in: ['body'],
+      trim: true,
       notEmpty: {
-        errorMessage: 'Password is required',
-        bail: true // Nếu không có password thì không cần kiểm tra tiếp
-      },
-      isLength: {
-        options: { min: 6, max: 50 },
-        errorMessage: 'Password must be between 6 and 50 characters',
+        errorMessage: USER_MESSAGES.DATE_OF_BIRTH_REQUIRED,
         bail: true
       },
-      isStrongPassword: {
-        options: {
-          minLength: 6,
-          minLowercase: 1,
-          minUppercase: 1,
-          minNumbers: 1,
-          minSymbols: 1
-        },
-        errorMessage:
-          'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character'
-      }
-    },
-    confirm_password: {
-      in: ['body'],
-      notEmpty: {
-        errorMessage: 'Confirm Password is required'
-      },
-      custom: {
-        options: (value, { req }) => {
-          if (value !== req.body.password) {
-            throw new Error('Confirm Password does not match Password')
-          }
-          return true
-        }
+      isISO8601: {
+        errorMessage: USER_MESSAGES.DATE_OF_BIRTH_INVALID // ISO 8601 date format, e.g., "2023-10-15", "2023-10-15T13:45:30Z"
       }
     },
     username: {
       in: ['body'],
-      trim: true, // Loại bỏ khoảng trắng thừa
+      trim: true,
       notEmpty: {
-        errorMessage: 'Username is required',
-        bail: true // Nếu không có username thì không cần kiểm tra tiếp
+        errorMessage: USER_MESSAGES.USER_NAME_REQUIRED,
+        bail: true
       },
       isAlphanumeric: {
-        errorMessage: 'Username must be alphanumeric' // Chỉ cho phép chữ và số
+        errorMessage: USER_MESSAGES.USER_NAME_MUST_BE_ALPHANUMERIC // Chỉ cho phép chữ và số
       },
       isLength: {
         options: { min: 3, max: 30 },
-        errorMessage: 'Username must be between 3 and 30 characters'
+        errorMessage: USER_MESSAGES.USER_NAME_LENGTH
       },
       custom: {
         options: async (value) => {
           const isUserExist = await UserService.isUsernameExist(value)
           if (isUserExist) {
-            throw new Error('Username already exists')
+            throw new Error(USER_MESSAGES.USERNAME_EXISTS)
           }
           return true
         }
       }
+    },
+    bio: {
+      in: ['body'],
+      trim: true,
+      optional: true,
+      isLength: {
+        options: { max: 500 },
+        errorMessage: USER_MESSAGES.BIO_LENGTH
+      }
+    },
+    location: {
+      in: ['body'],
+      trim: true,
+      optional: true,
+      isLength: {
+        options: { max: 100 },
+        errorMessage: USER_MESSAGES.LOCATION_LENGTH
+      }
+    },
+    website: {
+      in: ['body'],
+      trim: true,
+      optional: true
+    },
+    avatar: {
+      in: ['body'],
+      trim: true,
+      optional: true
+    },
+    cover_photo: {
+      in: ['body'],
+      trim: true,
+      optional: true
     }
   })
 )
@@ -117,35 +152,99 @@ export const updateUserValidator = validate(
     id: {
       in: ['params'],
       notEmpty: {
-        errorMessage: 'User ID is required'
+        errorMessage: USER_MESSAGES.USER_ID_REQUIRED
       }
     },
     name: {
       in: ['body'],
+      trim: true,
       optional: true,
       isString: {
-        errorMessage: 'Name must be a string'
+        errorMessage: USER_MESSAGES.NAME_MUST_BE_STRING
       },
       isLength: {
-        options: { max: 100 },
-        errorMessage: 'Name must not exceed 100 characters'
+        options: { min: 5, max: 100 },
+        errorMessage: USER_MESSAGES.NAME_LENGTH
       }
     },
     email: {
       in: ['body'],
+      trim: true,
       optional: true,
       isEmail: {
-        errorMessage: 'Invalid email format'
+        errorMessage: USER_MESSAGES.EMAIL_INVALID
       },
       custom: {
         options: async (value) => {
           const isUserExist = await UserService.isEmailExist(value)
           if (isUserExist) {
-            throw new Error('Email already exists')
+            throw new Error(USER_MESSAGES.EMAIL_EXISTS)
           }
           return true
         }
       }
+    },
+    date_of_birth: {
+      in: ['body'],
+      trim: true,
+      optional: true,
+      isISO8601: {
+        errorMessage: USER_MESSAGES.DATE_OF_BIRTH_INVALID // ISO 8601 date format, e.g., "2023-10-15", "2023-10-15T13:45:30Z"
+      }
+    },
+    username: {
+      in: ['body'],
+      trim: true,
+      optional: true,
+      isAlphanumeric: {
+        errorMessage: USER_MESSAGES.USER_NAME_MUST_BE_ALPHANUMERIC // Chỉ cho phép chữ và số
+      },
+      isLength: {
+        options: { min: 3, max: 30 },
+        errorMessage: USER_MESSAGES.USER_NAME_LENGTH
+      },
+      custom: {
+        options: async (value) => {
+          const isUserExist = await UserService.isUsernameExist(value)
+          if (isUserExist) {
+            throw new Error(USER_MESSAGES.USERNAME_EXISTS)
+          }
+          return true
+        }
+      }
+    },
+    bio: {
+      in: ['body'],
+      trim: true,
+      optional: true,
+      isLength: {
+        options: { max: 500 },
+        errorMessage: USER_MESSAGES.BIO_LENGTH
+      }
+    },
+    location: {
+      in: ['body'],
+      trim: true,
+      optional: true,
+      isLength: {
+        options: { max: 100 },
+        errorMessage: USER_MESSAGES.LOCATION_LENGTH
+      }
+    },
+    website: {
+      in: ['body'],
+      trim: true,
+      optional: true
+    },
+    avatar: {
+      in: ['body'],
+      trim: true,
+      optional: true
+    },
+    cover_photo: {
+      in: ['body'],
+      trim: true,
+      optional: true
     }
   })
 )
@@ -156,16 +255,17 @@ export const loginValidator = validate(
       in: ['body'],
       trim: true,
       notEmpty: {
-        errorMessage: 'Email is required'
+        errorMessage: USER_MESSAGES.EMAIL_REQUIRED,
+        bail: true
       },
       isEmail: {
-        errorMessage: 'Invalid email format'
+        errorMessage: USER_MESSAGES.EMAIL_INVALID
       }
     },
     password: {
       in: ['body'],
       notEmpty: {
-        errorMessage: 'Password is required'
+        errorMessage: USER_MESSAGES.PASSWORD_REQUIRED
       }
     }
   })
