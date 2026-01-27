@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import jwt, { SignOptions } from 'jsonwebtoken'
 import { envConfig } from '~/config/env-config.js'
 import { TokenType } from '~/constants/enum.js'
 import { HTTP_STATUS } from '~/constants/http-status.js'
@@ -11,20 +11,20 @@ export interface TokenPayload {
 }
 
 export class JWTUtils {
+  private static signToken(payload: TokenPayload, expiresIn: SignOptions['expiresIn']): string {
+    return jwt.sign(payload, envConfig.jwtSecret, { expiresIn })
+  }
+
   /**
    * Generate Access Token
    */
   static generateAccessToken(payload: Omit<TokenPayload, 'type'>): string {
-    return jwt.sign(
+    return this.signToken(
       {
-        userId: payload.userId,
-        email: payload.email,
+        ...payload,
         type: TokenType.AccessToken
       },
-      envConfig.jwtSecret,
-      {
-        expiresIn: envConfig.jwtAccessTokenExpiresIn
-      }
+      envConfig.jwtAccessTokenExpiresIn
     )
   }
 
@@ -32,15 +32,12 @@ export class JWTUtils {
    * Generate Refresh Token
    */
   static generateRefreshToken(payload: Omit<TokenPayload, 'type'>): string {
-    return jwt.sign(
+    return this.signToken(
       {
         ...payload,
         type: TokenType.RefreshToken
       },
-      envConfig.jwtSecret,
-      {
-        expiresIn: envConfig.jwtRefreshTokenExpiresIn
-      }
+      envConfig.jwtRefreshTokenExpiresIn
     )
   }
 
