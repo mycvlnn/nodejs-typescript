@@ -1,6 +1,9 @@
 import { Request, Response } from 'express'
+import { matchedData } from 'express-validator'
+import { HTTP_STATUS } from '~/constants/http-status.js'
 import { BaseController } from '~/controllers/base.controller.js'
 import { UserService } from '~/services/user.service.js'
+import { IUserCreate, IUserUpdate } from '~/types/user.types.js'
 import { wrapRequestHandler } from '~/utils/handler.js'
 
 /**
@@ -45,10 +48,11 @@ export class UserController extends BaseController {
    * Create new user (Register)
    */
   createUser = wrapRequestHandler(async (req: Request, res: Response) => {
-    const userData = req.body
+    // Chỉ lấy những fields đã được validate (Tránh gửi thừa dữ liệu)
+    const userData = matchedData<IUserCreate>(req)
+
     const result = await this.userService.createUser(userData)
-    this.sendResponse(res, 201, {
-      status: 'success',
+    this.sendResponse(res, HTTP_STATUS.CREATED, {
       message: 'User registered successfully',
       data: {
         user: result.user,
@@ -63,7 +67,7 @@ export class UserController extends BaseController {
    */
   updateUser = wrapRequestHandler(async (req: Request, res: Response) => {
     const { id } = req.params
-    const userData = req.body
+    const userData = matchedData<IUserUpdate>(req)
     const user = await this.userService.updateUser(id, userData)
     this.sendSuccess(res, user)
   })

@@ -1,22 +1,40 @@
 import bcrypt from 'bcrypt'
-import { UserModel, IUser, IUserCreate, IUserUpdate, UserStatus } from '~/models/user.model.js'
+import { UserModel } from '~/models/user.model.js'
 import { RefreshTokenModel } from '~/models/refresh_token.model.js'
 import { HttpException } from '~/core/http-exception.js'
 import { JWTUtils } from '~/utils/jwt.js'
 import { envConfig } from '~/config/env-config.js'
 import { TokenType } from '~/constants/enum.js'
 import { HTTP_STATUS } from '~/constants/http-status.js'
+import { IUser, IUserCreate, IUserUpdate, UserStatus } from '~/types/user.types.js'
+import _ from 'lodash'
 
 /**
  * User Service - Business Logic Layer
  * Chứa toàn bộ logic nghiệp vụ, validation, và xử lý dữ liệu
  */
 export class UserService {
-  getExpiresAt() {
+  private getExpiresAt() {
     const expiresAt = new Date()
     const daysExpire = envConfig.jwtRefreshTokenExpiresIn?.toString().replace('d', '') as string
     expiresAt.setDate(expiresAt.getDate() + Number(daysExpire))
     return expiresAt
+  }
+
+  /**
+   * Check email exist
+   */
+  static async isEmailExist(email: string): Promise<boolean> {
+    const exists = await UserModel.existsByEmail(email)
+    return exists
+  }
+
+  /**
+   * Check username exist
+   */
+  static async isUsernameExist(username: string): Promise<boolean> {
+    const exists = await UserModel.existsByUsername(username)
+    return exists
   }
 
   /**
@@ -63,11 +81,10 @@ export class UserService {
       // Hash password trước khi lưu
       const hashedPassword = await bcrypt.hash(userData.password, 10)
 
+      const userDataUpdated = { ..._.omit(userData, 'confirm_password'), password: hashedPassword }
+
       // Tạo user mới
-      const user = await UserModel.create({
-        ...userData,
-        password: hashedPassword
-      })
+      const user = await UserModel.create(userDataUpdated)
 
       // Generate JWT tokens
       const tokens = JWTUtils.generateTokens({
@@ -195,22 +212,6 @@ export class UserService {
       access_token: tokens.accessToken,
       refresh_token: tokens.refreshToken
     }
-  }
-
-  /**
-   * Check email exist
-   */
-  static async isEmailExist(email: string): Promise<boolean> {
-    const exists = await UserModel.existsByEmail(email)
-    return exists
-  }
-
-  /**
-   * Check username exist
-   */
-  static async isUsernameExist(username: string): Promise<boolean> {
-    const exists = await UserModel.existsByUsername(username)
-    return exists
   }
 
   /**
