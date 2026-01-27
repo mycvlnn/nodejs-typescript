@@ -1,44 +1,6 @@
 import { Collection, ObjectId } from 'mongodb'
 import { MongoDBService } from '~/services/database.service.js'
-
-// ========== INTERFACES ==========
-export enum UserStatus {
-  Unverified = 0,
-  Verified = 1,
-  Banned = 2,
-  Active = 3
-}
-
-export interface IUser {
-  _id?: ObjectId
-  name: string
-  email: string
-  date_of_birth: Date
-  password: string
-
-  created_at: Date
-  updated_at: Date
-
-  email_verify_token: string
-  forgot_password_token: string
-  status: UserStatus
-
-  username?: string
-  bio?: string
-  location?: string
-  website?: string
-  avatar?: string
-  cover_photo?: string
-}
-
-export type IUserCreate = Omit<
-  IUser,
-  '_id' | 'created_at' | 'updated_at' | 'email_verify_token' | 'forgot_password_token' | 'status'
->
-
-export type IUserUpdate = Partial<Omit<IUser, '_id' | 'created_at' | 'email_verify_token' | 'forgot_password_token'>>
-
-export type IUserResponse = Omit<IUser, 'password'>
+import { IUser, IUserCreate, IUserResponse, IUserUpdate, UserStatus } from '~/types/user.types.js'
 
 // ========== MODEL CLASS ==========
 export class UserModel {
