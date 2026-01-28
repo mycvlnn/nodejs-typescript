@@ -1,7 +1,9 @@
 import { Request, Response } from 'express'
 import { matchedData } from 'express-validator'
 import { HTTP_STATUS } from '~/constants/http-status.js'
+import { AUTH_MESSAGES } from '~/constants/messages.js'
 import { BaseController } from '~/controllers/base.controller.js'
+import { HttpException } from '~/core/http-exception.js'
 import { UserService } from '~/services/user.service.js'
 import { IUserCreate, IUserUpdate } from '~/types/user.types.js'
 import { wrapRequestHandler } from '~/utils/handler.js'
@@ -103,21 +105,20 @@ export class UserController extends BaseController {
    * Logout từ thiết bị hiện tại
    */
   logout = wrapRequestHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.userId
-    const { refreshToken } = req.body
+    const userId = req.access_token_decoded?.userId
+    const { refresh_token } = req.body
 
     if (!userId) {
-      throw new Error('User not authenticated')
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: AUTH_MESSAGES.USER_NOT_FOUND
+      })
     }
 
-    if (!refreshToken) {
-      throw new Error('Refresh token is required')
-    }
-
-    await this.userService.logout(userId, refreshToken)
+    await this.userService.logout(userId, refresh_token)
 
     this.sendSuccess(res, {
-      message: 'Logout successful'
+      message: AUTH_MESSAGES.LOGOUT_SUCCESS
     })
   })
 
@@ -125,7 +126,7 @@ export class UserController extends BaseController {
    * Logout từ tất cả thiết bị
    */
   logoutAll = wrapRequestHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.userId
+    const userId = req.access_token_decoded?.userId
 
     if (!userId) {
       throw new Error('User not authenticated')
@@ -142,7 +143,7 @@ export class UserController extends BaseController {
    * Get current user profile
    */
   getProfile = wrapRequestHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.userId
+    const userId = req.access_token_decoded?.userId
 
     if (!userId) {
       throw new Error('User not authenticated')

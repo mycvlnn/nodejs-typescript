@@ -4,10 +4,10 @@ import { RefreshTokenModel } from '~/models/refresh_token.model.js'
 import { HttpException } from '~/core/http-exception.js'
 import { JWTUtils } from '~/utils/jwt.js'
 import { envConfig } from '~/config/env-config.js'
-import { TokenType } from '~/constants/enum.js'
 import { HTTP_STATUS } from '~/constants/http-status.js'
 import { IUser, IUserCreate, IUserUpdate, UserStatus } from '~/types/user.types.js'
 import _ from 'lodash'
+import { TOKEN_MESSAGES } from '~/constants/messages.js'
 
 /**
  * User Service - Business Logic Layer
@@ -222,14 +222,7 @@ export class UserService {
     refresh_token: string
   }> {
     // Verify refresh token
-    const decoded = JWTUtils.verifyToken(refreshToken)
-
-    if (decoded.type !== TokenType.RefreshToken) {
-      throw new HttpException({
-        status: HTTP_STATUS.UNAUTHORIZED,
-        message: 'Invalid token type'
-      })
-    }
+    JWTUtils.verifyRefreshToken(refreshToken)
 
     // Check if refresh token exists in database
     const tokenDoc = await RefreshTokenModel.findByToken(refreshToken)
@@ -285,7 +278,13 @@ export class UserService {
    * Logout từ thiết bị hiện tại (xóa 1 refresh token)
    */
   async logout(userId: string, refreshToken: string): Promise<void> {
-    await RefreshTokenModel.deleteByUserAndToken(userId, refreshToken)
+    const isDeletedSuccess = await RefreshTokenModel.deleteByUserAndToken(userId, refreshToken)
+    if (!isDeletedSuccess) {
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: TOKEN_MESSAGES.REFRESH_TOKEN_NOT_FOUND
+      })
+    }
   }
 
   /**

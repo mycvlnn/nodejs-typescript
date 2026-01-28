@@ -1,3 +1,13 @@
+/**
+ * General Messages
+ */
+export const MESSAGES = {
+  SUCCESS: 'Success',
+  INTERNAL_SERVER_ERROR: 'Internal server error',
+  VALIDATION_FAILED: 'Validation failed',
+  NOT_FOUND: 'Resource not found'
+} as const
+
 export const USER_MESSAGES = {
   VALIDATION_FAILED: 'User data validation failed',
 
@@ -38,3 +48,43 @@ export const USER_MESSAGES = {
   // Update user
   USER_ID_REQUIRED: 'User ID is required'
 } as const
+
+/**
+ * Authentication & Authorization Messages
+ */
+export const AUTH_MESSAGES = {
+  // Authorization
+  UNAUTHORIZED: 'You are not authorized to access this resource',
+  FORBIDDEN: 'You do not have permission to perform this action',
+
+  // Login
+  LOGIN_SUCCESS: 'Login successful',
+  LOGOUT_SUCCESS: 'Logout successful',
+  LOGOUT_ALL_SUCCESS: 'Logged out from all devices',
+
+  // User
+  USER_NOT_FOUND: 'User not found'
+} as const
+
+export const TOKEN_ERROR_NAMES = {
+  TOKEN_EXPIRED: 'TokenExpiredError',
+  JSON_WEB_TOKEN_ERROR: 'JsonWebTokenError'
+}
+
+export const TOKEN_MESSAGES = {
+  // Access Token
+  ACCESS_TOKEN_REQUIRED: 'Access token is required',
+  INVALID_ACCESS_TOKEN: 'Invalid access token',
+  ACCESS_TOKEN_EXPIRED: 'Access token has expired',
+  INVALID_ACCESS_TOKEN_TYPE: 'Invalid access token type',
+  ACCESS_TOKEN_VERIFICATION_FAILED: 'Access token verification failed',
+
+  // Refresh Token
+  REFRESH_TOKEN_REQUIRED: 'Refresh token is required',
+  INVALID_REFRESH_TOKEN_TYPE: 'Invalid refresh token type',
+  INVALID_REFRESH_TOKEN: 'Invalid refresh token',
+  REFRESH_TOKEN_EXPIRED: 'Refresh token has expired',
+  REFRESH_TOKEN_NOT_FOUND: 'Refresh token not found',
+  REFRESH_TOKEN_VERIFICATION_FAILED: 'Refresh token verification failed',
+  REFRESH_TOKEN_USER_MISMATCH: 'Refresh token does not belong to the user'
+}
