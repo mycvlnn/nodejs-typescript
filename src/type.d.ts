@@ -1,4 +1,4 @@
-import { TokenPayload } from './types/jwt.types.ts'
+import { DecodedToken } from './types/jwt.types.ts'
 
 /**
  * Extend Express Request interface
@@ -7,8 +7,8 @@ import { TokenPayload } from './types/jwt.types.ts'
 declare global {
   namespace Express {
     interface Request {
-      access_token_decoded?: TokenPayload
-      refresh_token_decoded?: TokenPayload
+      access_token_decoded?: DecodedToken
+      refresh_token_decoded?: DecodedToken
     }
   }
 }

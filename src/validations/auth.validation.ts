@@ -16,8 +16,6 @@ export const accessTokenValidator = validate(
       authorization: {
         custom: {
           options: (value: string, { req }) => {
-            console.log('Validating Access Token:', value)
-
             // Check Bearer format
             if (!value || !value.startsWith('Bearer ')) {
               throw new HttpException({
@@ -41,31 +39,23 @@ export const accessTokenValidator = validate(
   )
 )
 
-/**
- * Validator for Refresh Token
- */
 export const refreshTokenValidator = validate(
   checkSchema({
     refresh_token: {
       in: ['body'],
-      notEmpty: {
-        errorMessage: TOKEN_MESSAGES.REFRESH_TOKEN_REQUIRED
-      },
       custom: {
-        options: async (value: string, { req }) => {
-          // Verify token
-          const decoded = JWTUtils.verifyRefreshToken(value)
-          ;(req as Request).refresh_token_decoded = decoded // Gán user data vào request để sử dụng ở middleware tiếp theo
-
-          // Thực hiện kiểm tra xem userId của access token và refresh token có khớp nhau không
-          const accessTokenDecoded = (req as Request).access_token_decoded
-          if (accessTokenDecoded?.userId !== decoded?.userId) {
+        options: (value: string, { req }) => {
+          // Trường hợp không gửi refresh_token lên
+          if (!value?.trim()) {
             throw new HttpException({
               status: HTTP_STATUS.UNAUTHORIZED,
-              message: TOKEN_MESSAGES.REFRESH_TOKEN_USER_MISMATCH
+              message: TOKEN_MESSAGES.REFRESH_TOKEN_REQUIRED
             })
           }
 
+          // Verify token
+          const decoded = JWTUtils.verifyRefreshToken(value)
+          ;(req as Request).refresh_token_decoded = decoded
           return true
         }
       }

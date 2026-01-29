@@ -20,17 +20,14 @@ const router = express.Router()
 // ========== PUBLIC ROUTES (không cần authentication) ==========
 router.post('/login', loginValidator, loginUser)
 router.post('/register', createUserValidator, createUser)
+router.post('/refresh-token', refreshTokenValidator, refreshToken)
 
-// ========== PROTECTED ROUTES (cần authentication) ==========
-// router.use(authMiddleware) // Apply auth middleware to all routes below
-
-router.post('/refresh-token', refreshToken)
 router.post('/logout', accessTokenValidator, refreshTokenValidator, logout)
-router.post('/logout-all', logoutAll)
-router.get('/profile', getProfile)
-router.get('/', getUsers)
-router.get('/:id', getUser)
+router.post('/logout-all', accessTokenValidator, logoutAll)
+router.get('/profile', accessTokenValidator, getProfile)
+router.get('/', accessTokenValidator, getUsers)
+router.get('/:id', accessTokenValidator, getUser)
 router.put('/:id', accessTokenValidator, updateUserValidator, updateUser)
-router.delete('/:id', deleteUser)
+router.delete('/:id', accessTokenValidator, deleteUser)
 
 export default router

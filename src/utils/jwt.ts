@@ -1,52 +1,74 @@
-import jwt, { SignOptions } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import { envConfig } from '~/config/env-config.js'
 import { TokenType } from '~/constants/enum.js'
 import { HTTP_STATUS } from '~/constants/http-status.js'
 import { TOKEN_MESSAGES } from '~/constants/messages.js'
 import { HttpException } from '~/core/http-exception.js'
-import { TokenPayload } from '~/types/jwt.types.js'
+import {
+  DecodedToken,
+  SignAccessTokenParams,
+  SignRefreshTokenParams,
+  SignTokenParams,
+  TokenPayload
+} from '~/types/jwt.types.js'
 
 export class JWTUtils {
-  private static signToken(payload: TokenPayload, expiresIn: SignOptions['expiresIn']): string {
+  private static signToken({ payload, expiresIn }: SignTokenParams): string {
     return jwt.sign(payload, envConfig.jwtSecret, { expiresIn })
   }
 
   /**
    * Generate Access Token
    */
-  static generateAccessToken(payload: Omit<TokenPayload, 'type'>): string {
-    return this.signToken(
-      {
+  static generateAccessToken({
+    payload,
+    expiresIn = envConfig.jwtAccessTokenExpiresIn
+  }: SignAccessTokenParams): string {
+    return this.signToken({
+      payload: {
         ...payload,
         type: TokenType.AccessToken
       },
-      envConfig.jwtAccessTokenExpiresIn
-    )
+      expiresIn
+    })
   }
 
   /**
    * Generate Refresh Token
    */
-  static generateRefreshToken(payload: Omit<TokenPayload, 'type'>): string {
-    return this.signToken(
-      {
+  static generateRefreshToken({
+    payload,
+    expiresIn = envConfig.jwtRefreshTokenExpiresIn
+  }: SignRefreshTokenParams): string {
+    return this.signToken({
+      payload: {
         ...payload,
         type: TokenType.RefreshToken
       },
-      envConfig.jwtRefreshTokenExpiresIn
-    )
+      expiresIn
+    })
   }
 
   /**
    * Generate both tokens
    */
-  static generateTokens(payload: Omit<TokenPayload, 'type'>): {
+  static generateTokens({ email, userId }: Omit<TokenPayload, 'type'>): {
     accessToken: string
     refreshToken: string
   } {
     return {
-      accessToken: this.generateAccessToken(payload),
-      refreshToken: this.generateRefreshToken(payload)
+      accessToken: this.generateAccessToken({
+        payload: {
+          email,
+          userId
+        }
+      }),
+      refreshToken: this.generateRefreshToken({
+        payload: {
+          email,
+          userId
+        }
+      })
     }
   }
 
@@ -54,9 +76,9 @@ export class JWTUtils {
    * Verify Access Token
    * ✅ Specific error messages cho access token
    */
-  static verifyAccessToken(token: string): TokenPayload {
+  static verifyAccessToken(token: string): DecodedToken {
     try {
-      const decoded = jwt.verify(token, envConfig.jwtSecret) as TokenPayload
+      const decoded = jwt.verify(token, envConfig.jwtSecret) as DecodedToken
 
       // Check token type
       if (decoded.type !== TokenType.AccessToken) {
@@ -95,9 +117,9 @@ export class JWTUtils {
    * Verify Refresh Token
    * ✅ Specific error messages cho refresh token
    */
-  static verifyRefreshToken(token: string): TokenPayload {
+  static verifyRefreshToken(token: string): DecodedToken {
     try {
-      const decoded = jwt.verify(token, envConfig.jwtSecret) as TokenPayload
+      const decoded = jwt.verify(token, envConfig.jwtSecret) as DecodedToken
 
       // Check token type
       if (decoded.type !== TokenType.RefreshToken) {

@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt'
+import _ from 'lodash'
 import { UserModel } from '~/models/user.model.js'
 import { RefreshTokenModel } from '~/models/refresh_token.model.js'
 import { HttpException } from '~/core/http-exception.js'
@@ -6,8 +7,8 @@ import { JWTUtils } from '~/utils/jwt.js'
 import { envConfig } from '~/config/env-config.js'
 import { HTTP_STATUS } from '~/constants/http-status.js'
 import { IUser, IUserCreate, IUserUpdate, UserStatus } from '~/types/user.types.js'
-import _ from 'lodash'
-import { TOKEN_MESSAGES } from '~/constants/messages.js'
+import { AUTH_MESSAGES, TOKEN_MESSAGES } from '~/constants/messages.js'
+import { DecodedToken } from '~/types/jwt.types.js'
 
 /**
  * User Service - Business Logic Layer
@@ -175,14 +176,14 @@ export class UserService {
     if (!user) {
       throw new HttpException({
         status: HTTP_STATUS.UNAUTHORIZED,
-        message: 'Invalid email or password'
+        message: AUTH_MESSAGES.INVALID_USER_CREDENTIALS
       })
     }
 
     if (!user.status || user.status !== UserStatus.Active) {
       throw new HttpException({
         status: HTTP_STATUS.UNAUTHORIZED,
-        message: 'Account is not active'
+        message: AUTH_MESSAGES.ACCOUNT_NOT_ACTIVE
       })
     }
 
@@ -191,7 +192,7 @@ export class UserService {
     if (!isValidPassword) {
       throw new HttpException({
         status: HTTP_STATUS.UNAUTHORIZED,
-        message: 'Invalid email or password'
+        message: AUTH_MESSAGES.INVALID_USER_CREDENTIALS
       })
     }
 
@@ -214,15 +215,20 @@ export class UserService {
     }
   }
 
-  /**
-   * Refresh access token
-   */
-  async refreshToken(refreshToken: string): Promise<{
+  async refreshToken(
+    refreshToken: string,
+    userData?: DecodedToken
+  ): Promise<{
     access_token: string
     refresh_token: string
   }> {
-    // Verify refresh token
-    JWTUtils.verifyRefreshToken(refreshToken)
+    // Kiểm tra thông tin user được decode từ refresh token.
+    if (!userData?.userId) {
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: AUTH_MESSAGES.USER_NOT_FOUND
+      })
+    }
 
     // Check if refresh token exists in database
     const tokenDoc = await RefreshTokenModel.findByToken(refreshToken)
@@ -230,47 +236,52 @@ export class UserService {
     if (!tokenDoc) {
       throw new HttpException({
         status: HTTP_STATUS.UNAUTHORIZED,
-        message: 'Invalid refresh token'
+        message: TOKEN_MESSAGES.REFRESH_TOKEN_NOT_FOUND
       })
     }
 
-    // Kiểm tra token còn hạn không
-    if (tokenDoc.expires_at < new Date()) {
-      await RefreshTokenModel.deleteByToken(refreshToken)
-      throw new HttpException({
-        status: HTTP_STATUS.UNAUTHORIZED,
-        message: 'Refresh token expired'
-      })
-    }
-
-    // Get user info
-    const user = await UserModel.findById(tokenDoc.user_id)
-
-    if (!user) {
-      throw new HttpException({
-        status: HTTP_STATUS.UNAUTHORIZED,
-        message: 'User not found'
-      })
-    }
-
-    // Xóa refresh token cũ
     await RefreshTokenModel.deleteByToken(refreshToken)
 
-    // Generate new tokens
-    const tokens = JWTUtils.generateTokens({
-      userId: user._id!.toString(),
-      email: user.email
+    // Tính toán thời gian còn lại của refresh token
+    const now = new Date()
+    const remainingTime = Math.max(tokenDoc.expires_at.getTime() - now.getTime(), 0)
+
+    // Trường hợp token hết hạn
+    if (remainingTime <= 0) {
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: TOKEN_MESSAGES.REFRESH_TOKEN_EXPIRED
+      })
+    }
+
+    const oldExpiresAt = new Date(now.getTime() + remainingTime)
+
+    // Tạo refreshToken mới dựa trên expire time cũ
+    const newRefreshToken = JWTUtils.generateRefreshToken({
+      payload: {
+        email: userData.email,
+        userId: userData.userId
+      },
+      expiresIn: Math.floor(remainingTime / 1000) // in seconds
     })
 
+    const newAccessToken = JWTUtils.generateAccessToken({
+      payload: {
+        email: userData.email,
+        userId: userData.userId
+      }
+    })
+
+    // Store new refresh token với preserved expire time
     await RefreshTokenModel.create({
-      user_id: user._id!,
-      token: tokens.refreshToken,
-      expires_at: this.getExpiresAt()
+      user_id: tokenDoc.user_id,
+      token: newRefreshToken,
+      expires_at: oldExpiresAt
     })
 
     return {
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken
+      access_token: newAccessToken,
+      refresh_token: newRefreshToken
     }
   }
 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { matchedData } from 'express-validator'
 import { HTTP_STATUS } from '~/constants/http-status.js'
-import { AUTH_MESSAGES } from '~/constants/messages.js'
+import { AUTH_MESSAGES, TOKEN_MESSAGES } from '~/constants/messages.js'
 import { BaseController } from '~/controllers/base.controller.js'
 import { HttpException } from '~/core/http-exception.js'
 import { UserService } from '~/services/user.service.js'
@@ -83,20 +83,14 @@ export class UserController extends BaseController {
     this.sendSuccess(res, { message: 'User deleted successfully' })
   })
 
-  /**
-   * Refresh access token
-   */
   refreshToken = wrapRequestHandler(async (req: Request, res: Response) => {
-    const { refreshToken } = req.body
+    const { refresh_token } = req.body
+    const userDecoded = req?.refresh_token_decoded
 
-    if (!refreshToken) {
-      throw new Error('Refresh token is required')
-    }
-
-    const tokens = await this.userService.refreshToken(refreshToken)
+    const tokens = await this.userService.refreshToken(refresh_token, userDecoded)
 
     this.sendSuccess(res, {
-      message: 'Token refreshed successfully',
+      message: TOKEN_MESSAGES.TOKEN_REFRESH_SUCCESS,
       ...tokens
     })
   })

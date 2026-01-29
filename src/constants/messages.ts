@@ -61,6 +61,8 @@ export const AUTH_MESSAGES = {
   LOGIN_SUCCESS: 'Login successful',
   LOGOUT_SUCCESS: 'Logout successful',
   LOGOUT_ALL_SUCCESS: 'Logged out from all devices',
+  INVALID_USER_CREDENTIALS: 'Invalid email or password',
+  ACCOUNT_NOT_ACTIVE: 'Account is not active',
 
   // User
   USER_NOT_FOUND: 'User not found'
@@ -86,5 +88,7 @@ export const TOKEN_MESSAGES = {
   REFRESH_TOKEN_EXPIRED: 'Refresh token has expired',
   REFRESH_TOKEN_NOT_FOUND: 'Refresh token not found',
   REFRESH_TOKEN_VERIFICATION_FAILED: 'Refresh token verification failed',
-  REFRESH_TOKEN_USER_MISMATCH: 'Refresh token does not belong to the user'
+  REFRESH_TOKEN_USER_MISMATCH: 'Refresh token does not belong to the user',
+
+  TOKEN_REFRESH_SUCCESS: 'Token refreshed successfully'
 }
