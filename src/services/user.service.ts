@@ -117,7 +117,22 @@ export class UserService {
   /**
    * Update user
    */
-  async updateUser(id: string, userData: IUserUpdate): Promise<IUser> {
+  async updateUser({
+    id,
+    userData,
+    userDecoded
+  }: {
+    id: string
+    userData: IUserUpdate
+    userDecoded?: DecodedToken
+  }): Promise<IUser> {
+    if (userDecoded?.userId !== id) {
+      throw new HttpException({
+        status: HTTP_STATUS.FORBIDDEN,
+        message: AUTH_MESSAGES.ONLY_OWNER_CAN_UPDATE_PROFILE
+      })
+    }
+
     // Kiểm tra user có tồn tại không
     const existingUser = await UserModel.findById(id)
     if (!existingUser) {

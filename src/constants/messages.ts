@@ -69,7 +69,8 @@ export const AUTH_MESSAGES = {
   // User
   USER_NOT_FOUND: 'User not found',
   EMAIL_ALREADY_VERIFIED: 'Email is already verified',
-  FAILED_TO_VERIFY_EMAIL: 'Failed to verify email'
+  FAILED_TO_VERIFY_EMAIL: 'Failed to verify email',
+  ONLY_OWNER_CAN_UPDATE_PROFILE: 'You can only update your own profile'
 } as const
 
 export const TOKEN_ERROR_NAMES = {

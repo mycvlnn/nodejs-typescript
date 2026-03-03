@@ -105,9 +105,9 @@ export class UserModel {
       { _id: objectId },
       {
         $set: {
-          ...data,
-          updated_at: new Date()
-        }
+          ...data
+        },
+        $currentDate: { updated_at: true } // Tự động cập nhật trường updated_at thành thời điểm hiện tại
       },
       { returnDocument: 'after' }
     )

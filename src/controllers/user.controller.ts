@@ -67,8 +67,14 @@ export class UserController extends BaseController {
    */
   updateUser = wrapRequestHandler(async (req: Request, res: Response) => {
     const { id } = req.params
-    const userData = matchedData<IUserUpdate>(req)
-    const user = await this.userService.updateUser(id, userData)
+    // Chỉ lấy những fields đã được validate trong body (Tránh gửi thừa dữ liệu)
+    const userData = matchedData<IUserUpdate>(req, {
+      locations: ['body']
+    })
+
+    const userDecoded = req.access_token_decoded
+
+    const user = await this.userService.updateUser({ id, userData, userDecoded })
     this.sendSuccess(res, user)
   })
 
