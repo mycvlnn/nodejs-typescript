@@ -7,13 +7,13 @@ import {
   updateUser,
   deleteUser,
   refreshToken,
+  verifyEmail,
   logout,
   logoutAll,
   getProfile
 } from '~/controllers/user.controller.js'
 import { createUserValidator, loginValidator, updateUserValidator } from '~/validations/user.validation.js'
-// import { authMiddleware } from '~/middlewares/auth.middleware.js'
-import { accessTokenValidator, refreshTokenValidator } from '~/validations/auth.validation.js'
+import { accessTokenValidator, refreshTokenValidator, verifyEmailValidator } from '~/validations/auth.validation.js'
 
 const router = express.Router()
 
@@ -21,6 +21,7 @@ const router = express.Router()
 router.post('/login', loginValidator, loginUser)
 router.post('/register', createUserValidator, createUser)
 router.post('/refresh-token', refreshTokenValidator, refreshToken)
+router.post('/verify-email', verifyEmailValidator, verifyEmail)
 
 router.post('/logout', accessTokenValidator, refreshTokenValidator, logout)
 router.post('/logout-all', accessTokenValidator, logoutAll)

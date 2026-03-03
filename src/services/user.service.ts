@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
 import _ from 'lodash'
+import { ObjectId } from 'mongodb'
+
 import { UserModel } from '~/models/user.model.js'
 import { RefreshTokenModel } from '~/models/refresh_token.model.js'
 import { HttpException } from '~/core/http-exception.js'
@@ -73,36 +75,35 @@ export class UserService {
   /**
    * Tạo user mới (Register)
    */
-  async createUser(userData: IUserCreate): Promise<{
-    user: IUser
-    access_token: string
-    refresh_token: string
-  }> {
+  async createUser(userData: IUserCreate) {
     try {
       // Hash password trước khi lưu
       const hashedPassword = await bcrypt.hash(userData.password, 10)
+      // Tạo userId thủ công để có thể dùng trong payload của email verify token
+      const userId = new ObjectId().toString()
 
-      const userDataUpdated = { ..._.omit(userData, 'confirm_password'), password: hashedPassword }
+      // Tạo email verify token cho user mới
+      const emailVerifyToken = JWTUtils.generateEmailVerifyToken({
+        email: userData.email,
+        userId
+      })
+
+      const userPayload: IUser = {
+        ..._.omit(userData, 'confirm_password'),
+        password: hashedPassword,
+        _id: new ObjectId(userId),
+        email_verify_token: emailVerifyToken,
+        forgot_password_token: '',
+        status: UserStatus.Unverified,
+        created_at: new Date(),
+        updated_at: new Date()
+      }
 
       // Tạo user mới
-      const user = await UserModel.create(userDataUpdated)
-
-      // Generate JWT tokens
-      const tokens = JWTUtils.generateTokens({
-        userId: user._id!.toString(),
-        email: user.email
-      })
-
-      await RefreshTokenModel.create({
-        user_id: user._id!,
-        token: tokens.refreshToken,
-        expires_at: this.getExpiresAt()
-      })
+      const user = await UserModel.create(userPayload)
 
       return {
-        user: UserModel.toResponse(user) as IUser,
-        access_token: tokens.accessToken,
-        refresh_token: tokens.refreshToken
+        user: UserModel.toResponse(user)
       }
     } catch (error: any) {
       if (error instanceof HttpException) throw error
@@ -180,10 +181,10 @@ export class UserService {
       })
     }
 
-    if (!user.status || user.status !== UserStatus.Active) {
+    if (user.status === UserStatus.Unverified) {
       throw new HttpException({
         status: HTTP_STATUS.UNAUTHORIZED,
-        message: AUTH_MESSAGES.ACCOUNT_NOT_ACTIVE
+        message: AUTH_MESSAGES.EMAIL_NOT_VERIFIED
       })
     }
 
@@ -303,5 +304,56 @@ export class UserService {
    */
   async logoutAll(userId: string): Promise<void> {
     await RefreshTokenModel.deleteAllByUserId(userId)
+  }
+
+  /**
+   * Verify email
+   */
+  async verifyEmail(userId: string) {
+    const user = await UserModel.findById(userId)
+
+    if (!user) {
+      throw new HttpException({
+        status: HTTP_STATUS.NOT_FOUND,
+        message: AUTH_MESSAGES.USER_NOT_FOUND
+      })
+    }
+
+    if (user.status === UserStatus.Verified) {
+      throw new HttpException({
+        status: HTTP_STATUS.BAD_REQUEST,
+        message: AUTH_MESSAGES.EMAIL_ALREADY_VERIFIED
+      })
+    }
+
+    const [updatedUser, tokens] = await Promise.all([
+      UserModel.updateById(userId, {
+        status: UserStatus.Verified,
+        email_verify_token: '' // Clear token sau khi verify
+      }),
+      JWTUtils.generateTokens({
+        email: user.email,
+        userId: user._id!.toString()
+      })
+    ])
+
+    if (!updatedUser) {
+      throw new HttpException({
+        status: HTTP_STATUS.BAD_REQUEST,
+        message: AUTH_MESSAGES.FAILED_TO_VERIFY_EMAIL
+      })
+    }
+
+    // Tạo refresh token mới cho user sau khi verify email
+    await RefreshTokenModel.create({
+      user_id: updatedUser._id!,
+      token: tokens.refreshToken,
+      expires_at: this.getExpiresAt()
+    })
+
+    return {
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken
+    }
   }
 }

@@ -90,18 +90,9 @@ export class UserModel {
   /**
    * Tạo user mới
    */
-  static async create(userData: IUserCreate): Promise<IUser> {
-    const user: IUser = {
-      ...userData,
-      created_at: new Date(),
-      updated_at: new Date(),
-      email_verify_token: '',
-      forgot_password_token: '',
-      status: UserStatus.Active
-    }
-
-    const result = await this.getCollection().insertOne(user)
-    return { ...user, _id: result.insertedId }
+  static async create(userData: IUser): Promise<IUser> {
+    const result = await this.getCollection().insertOne(userData)
+    return { ...userData, _id: result.insertedId }
   }
 
   /**
@@ -137,7 +128,8 @@ export class UserModel {
    * Convert user sang response (remove password)
    */
   static toResponse(user: IUser): IUserResponse {
-    const { password, ...userWithoutPassword } = user
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, email_verify_token, forgot_password_token, ...userWithoutPassword } = user
     return userWithoutPassword
   }
 

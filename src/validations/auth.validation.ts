@@ -62,3 +62,27 @@ export const refreshTokenValidator = validate(
     }
   })
 )
+
+export const verifyEmailValidator = validate(
+  checkSchema({
+    email_verify_token: {
+      in: ['body'],
+      custom: {
+        options: (value: string, { req }) => {
+          // Trường hợp không gửi  email_verify_token lên -> lỗi
+          if (!value?.trim()) {
+            throw new HttpException({
+              status: HTTP_STATUS.UNAUTHORIZED,
+              message: TOKEN_MESSAGES.EMAIL_VERIFY_TOKEN_REQUIRED
+            })
+          }
+
+          // Verify token
+          const decoded = JWTUtils.verifyEmailVerifyToken(value)
+          ;(req as Request).email_verify_token_decoded = decoded
+          return true
+        }
+      }
+    }
+  })
+)

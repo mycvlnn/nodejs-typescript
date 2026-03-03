@@ -63,9 +63,13 @@ export const AUTH_MESSAGES = {
   LOGOUT_ALL_SUCCESS: 'Logged out from all devices',
   INVALID_USER_CREDENTIALS: 'Invalid email or password',
   ACCOUNT_NOT_ACTIVE: 'Account is not active',
+  EMAIL_NOT_VERIFIED: 'Email is not verified',
+  EMAIL_VERIFY_SUCCESS: 'Email verified successfully',
 
   // User
-  USER_NOT_FOUND: 'User not found'
+  USER_NOT_FOUND: 'User not found',
+  EMAIL_ALREADY_VERIFIED: 'Email is already verified',
+  FAILED_TO_VERIFY_EMAIL: 'Failed to verify email'
 } as const
 
 export const TOKEN_ERROR_NAMES = {
@@ -89,6 +93,12 @@ export const TOKEN_MESSAGES = {
   REFRESH_TOKEN_NOT_FOUND: 'Refresh token not found',
   REFRESH_TOKEN_VERIFICATION_FAILED: 'Refresh token verification failed',
   REFRESH_TOKEN_USER_MISMATCH: 'Refresh token does not belong to the user',
+
+  // Email Verification Token
+  EMAIL_VERIFY_TOKEN_REQUIRED: 'Email verification token is required',
+  INVALID_EMAIL_VERIFY_TOKEN: 'Invalid email verification token',
+  EMAIL_VERIFY_TOKEN_EXPIRED: 'Email verification token has expired',
+  EMAIL_VERIFY_TOKEN_VERIFICATION_FAILED: 'Email verification token verification failed',
 
   TOKEN_REFRESH_SUCCESS: 'Token refreshed successfully'
 }

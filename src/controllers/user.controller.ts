@@ -57,9 +57,7 @@ export class UserController extends BaseController {
     this.sendResponse(res, HTTP_STATUS.CREATED, {
       message: 'User registered successfully',
       data: {
-        user: result.user,
-        access_token: result.access_token,
-        refresh_token: result.refresh_token
+        user: result.user
       }
     })
   })
@@ -146,6 +144,25 @@ export class UserController extends BaseController {
     const user = await this.userService.getUserById(userId)
     this.sendSuccess(res, user)
   })
+
+  // Controller xử lý xác thực email
+  verifyEmail = wrapRequestHandler(async (req: Request, res: Response) => {
+    const { userId } = req.email_verify_token_decoded || {}
+
+    if (!userId) {
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: AUTH_MESSAGES.USER_NOT_FOUND
+      })
+    }
+
+    const result = await this.userService.verifyEmail(userId)
+
+    this.sendSuccess(res, {
+      message: AUTH_MESSAGES.EMAIL_VERIFY_SUCCESS,
+      ...result
+    })
+  })
 }
 
 // Export instances của các methods
@@ -158,6 +175,7 @@ export const {
   updateUser,
   deleteUser,
   refreshToken,
+  verifyEmail,
   logout,
   logoutAll,
   getProfile

@@ -6,6 +6,7 @@ import { TOKEN_MESSAGES } from '~/constants/messages.js'
 import { HttpException } from '~/core/http-exception.js'
 import {
   DecodedToken,
+  EmailVerifyTokenPayload,
   SignAccessTokenParams,
   SignRefreshTokenParams,
   SignTokenParams,
@@ -13,8 +14,45 @@ import {
 } from '~/types/jwt.types.js'
 
 export class JWTUtils {
-  private static signToken({ payload, expiresIn }: SignTokenParams): string {
-    return jwt.sign(payload, envConfig.jwtSecret, { expiresIn })
+  private static signToken({ payload, expiresIn, secretOrPrivateKey }: SignTokenParams): string {
+    return jwt.sign(payload, secretOrPrivateKey, { expiresIn })
+  }
+
+  static generateEmailVerifyToken(payload: EmailVerifyTokenPayload): string {
+    return this.signToken({
+      payload: {
+        email: payload.email,
+        userId: payload.userId
+      },
+      secretOrPrivateKey: envConfig.jwtEmailVerificationTokenSecret,
+      expiresIn: envConfig.jwtEmailVerificationTokenExpiresIn
+    })
+  }
+
+  static verifyEmailVerifyToken(token: string): DecodedToken {
+    try {
+      const decoded = jwt.verify(token, envConfig.jwtEmailVerificationTokenSecret) as DecodedToken
+      return decoded
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new HttpException({
+          status: HTTP_STATUS.UNAUTHORIZED,
+          message: TOKEN_MESSAGES.EMAIL_VERIFY_TOKEN_EXPIRED
+        })
+      }
+
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new HttpException({
+          status: HTTP_STATUS.UNAUTHORIZED,
+          message: TOKEN_MESSAGES.INVALID_EMAIL_VERIFY_TOKEN
+        })
+      }
+
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: TOKEN_MESSAGES.EMAIL_VERIFY_TOKEN_VERIFICATION_FAILED
+      })
+    }
   }
 
   /**
@@ -29,6 +67,7 @@ export class JWTUtils {
         ...payload,
         type: TokenType.AccessToken
       },
+      secretOrPrivateKey: envConfig.jwtAccessTokenSecret,
       expiresIn
     })
   }
@@ -45,6 +84,7 @@ export class JWTUtils {
         ...payload,
         type: TokenType.RefreshToken
       },
+      secretOrPrivateKey: envConfig.jwtRefreshTokenSecret,
       expiresIn
     })
   }
@@ -78,7 +118,7 @@ export class JWTUtils {
    */
   static verifyAccessToken(token: string): DecodedToken {
     try {
-      const decoded = jwt.verify(token, envConfig.jwtSecret) as DecodedToken
+      const decoded = jwt.verify(token, envConfig.jwtAccessTokenSecret) as DecodedToken
 
       // Check token type
       if (decoded.type !== TokenType.AccessToken) {
@@ -119,7 +159,7 @@ export class JWTUtils {
    */
   static verifyRefreshToken(token: string): DecodedToken {
     try {
-      const decoded = jwt.verify(token, envConfig.jwtSecret) as DecodedToken
+      const decoded = jwt.verify(token, envConfig.jwtRefreshTokenSecret) as DecodedToken
 
       // Check token type
       if (decoded.type !== TokenType.RefreshToken) {

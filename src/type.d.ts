@@ -9,6 +9,7 @@ declare global {
     interface Request {
       access_token_decoded?: DecodedToken
       refresh_token_decoded?: DecodedToken
+      email_verify_token_decoded?: DecodedToken
     }
   }
 }

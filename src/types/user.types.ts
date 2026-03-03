@@ -3,9 +3,7 @@ import { ObjectId } from 'mongodb'
 // ====== Định nghĩa types liên quan đến User ======
 export enum UserStatus {
   Unverified = 0,
-  Verified = 1,
-  Banned = 2,
-  Active = 3
+  Verified = 1
 }
 
 /**
@@ -43,7 +41,7 @@ export type IUserCreate = Omit<
 /**
  * DTO để update user
  */
-export type IUserUpdate = Partial<Omit<IUser, '_id' | 'created_at' | 'email_verify_token' | 'forgot_password_token'>>
+export type IUserUpdate = Partial<Omit<IUser, '_id' | 'created_at' | 'forgot_password_token'>>
 
 /**
  * Response API (không có password)
