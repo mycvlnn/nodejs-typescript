@@ -1,6 +1,6 @@
 // src/validations/auth.validation.ts
 import { checkSchema } from 'express-validator'
-import { TOKEN_MESSAGES } from '~/constants/messages.js'
+import { TOKEN_MESSAGES, USER_MESSAGES } from '~/constants/messages.js'
 import { validate } from '~/utils/validate.js'
 import { JWTUtils } from '~/utils/jwt.js'
 import { HttpException } from '~/core/http-exception.js'
@@ -58,6 +58,20 @@ export const refreshTokenValidator = validate(
           ;(req as Request).refresh_token_decoded = decoded
           return true
         }
+      }
+    }
+  })
+)
+
+export const resendEmailVerifyValidator = validate(
+  checkSchema({
+    email: {
+      in: ['body'],
+      notEmpty: {
+        errorMessage: USER_MESSAGES.EMAIL_REQUIRED
+      },
+      isEmail: {
+        errorMessage: USER_MESSAGES.EMAIL_INVALID
       }
     }
   })

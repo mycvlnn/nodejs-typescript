@@ -116,6 +116,20 @@ export class UserModel {
   }
 
   /**
+   * Cập nhật email_verify_token cho user
+   */
+  static async updateEmailVerifyToken(id: string | ObjectId, token: string): Promise<void> {
+    const objectId = typeof id === 'string' ? new ObjectId(id) : id
+    await this.getCollection().updateOne(
+      { _id: objectId },
+      {
+        $set: { email_verify_token: token },
+        $currentDate: { updated_at: true }
+      }
+    )
+  }
+
+  /**
    * Xóa user theo ID
    */
   static async deleteById(id: string | ObjectId): Promise<boolean> {

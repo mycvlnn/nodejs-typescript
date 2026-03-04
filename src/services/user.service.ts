@@ -371,4 +371,36 @@ export class UserService {
       refresh_token: tokens.refreshToken
     }
   }
+
+  /**
+   * Resend email verification (tạo token mới và gửi lại)
+   */
+  async resendEmailVerify(email: string): Promise<void> {
+    const user = await UserModel.findByEmail(email)
+
+    if (!user) {
+      throw new HttpException({
+        status: HTTP_STATUS.NOT_FOUND,
+        message: AUTH_MESSAGES.USER_NOT_FOUND
+      })
+    }
+
+    if (user.status === UserStatus.Verified) {
+      throw new HttpException({
+        status: HTTP_STATUS.BAD_REQUEST,
+        message: AUTH_MESSAGES.EMAIL_ALREADY_VERIFIED
+      })
+    }
+
+    // Tạo email_verify_token mới (tránh token cũ sắp hết hạn)
+    const newEmailVerifyToken = JWTUtils.generateEmailVerifyToken({
+      userId: user._id!.toString(),
+      email: user.email
+    })
+
+    await UserModel.updateEmailVerifyToken(user._id!, newEmailVerifyToken)
+
+    // TODO: Gửi email xác thực
+    // await EmailService.sendVerificationEmail(user.email, newEmailVerifyToken)
+  }
 }

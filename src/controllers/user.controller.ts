@@ -151,6 +151,15 @@ export class UserController extends BaseController {
     this.sendSuccess(res, user)
   })
 
+  // Controller xử lý gửi lại email xác thực
+  resendEmailVerify = wrapRequestHandler(async (req: Request, res: Response) => {
+    const { email } = req.body
+    await this.userService.resendEmailVerify(email)
+    this.sendSuccess(res, {
+      message: AUTH_MESSAGES.RESEND_EMAIL_VERIFY_SUCCESS
+    })
+  })
+
   // Controller xử lý xác thực email
   verifyEmail = wrapRequestHandler(async (req: Request, res: Response) => {
     const { userId } = req.email_verify_token_decoded || {}
@@ -182,6 +191,7 @@ export const {
   deleteUser,
   refreshToken,
   verifyEmail,
+  resendEmailVerify,
   logout,
   logoutAll,
   getProfile
