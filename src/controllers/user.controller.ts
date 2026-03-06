@@ -5,6 +5,7 @@ import { AUTH_MESSAGES, TOKEN_MESSAGES } from '~/constants/messages.js'
 import { BaseController } from '~/controllers/base.controller.js'
 import { HttpException } from '~/core/http-exception.js'
 import { UserService } from '~/services/user.service.js'
+import { DecodedToken } from '~/types/jwt.types.js'
 import { IUserCreate, IUserUpdate } from '~/types/user.types.js'
 import { wrapRequestHandler } from '~/utils/handler.js'
 
@@ -47,18 +48,16 @@ export class UserController extends BaseController {
   })
 
   /**
-   * Create new user (Register)
+   * Register (Signup) user
    */
-  createUser = wrapRequestHandler(async (req: Request, res: Response) => {
+  registerUser = wrapRequestHandler(async (req: Request, res: Response) => {
     // Chỉ lấy những fields đã được validate (Tránh gửi thừa dữ liệu)
     const userData = matchedData<IUserCreate>(req)
 
     const result = await this.userService.createUser(userData)
     this.sendResponse(res, HTTP_STATUS.CREATED, {
       message: 'User registered successfully',
-      data: {
-        user: result.user
-      }
+      data: result
     })
   })
 
@@ -153,8 +152,16 @@ export class UserController extends BaseController {
 
   // Controller xử lý gửi lại email xác thực
   resendEmailVerify = wrapRequestHandler(async (req: Request, res: Response) => {
-    const { email } = req.body
-    await this.userService.resendEmailVerify(email)
+    const userId = req.access_token_decoded?.userId
+
+    if (!userId) {
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: AUTH_MESSAGES.USER_NOT_FOUND
+      })
+    }
+
+    await this.userService.resendEmailVerify(userId)
     this.sendSuccess(res, {
       message: AUTH_MESSAGES.RESEND_EMAIL_VERIFY_SUCCESS
     })
@@ -178,18 +185,11 @@ export class UserController extends BaseController {
     })
   })
 
-  // Controller xử lý xác thực email
-  verifyEmail = wrapRequestHandler(async (req: Request, res: Response) => {
-    const { userId } = req.email_verify_token_decoded || {}
+  // Controller xử lý xác thực email token
+  verifyEmailToken = wrapRequestHandler(async (req: Request, res: Response) => {
+    const { userId } = req.email_verify_token_decoded as DecodedToken
 
-    if (!userId) {
-      throw new HttpException({
-        status: HTTP_STATUS.UNAUTHORIZED,
-        message: AUTH_MESSAGES.USER_NOT_FOUND
-      })
-    }
-
-    const result = await this.userService.verifyEmail(userId)
+    const result = await this.userService.verifyEmailToken(userId)
 
     this.sendSuccess(res, {
       message: AUTH_MESSAGES.EMAIL_VERIFY_SUCCESS,
@@ -204,11 +204,11 @@ export const {
   loginUser,
   getUsers,
   getUser,
-  createUser,
+  registerUser,
   updateUser,
   deleteUser,
   refreshToken,
-  verifyEmail,
+  verifyEmailToken,
   resendEmailVerify,
   forgotPassword,
   resetPassword,

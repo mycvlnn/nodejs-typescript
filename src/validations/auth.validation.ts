@@ -63,12 +63,6 @@ export const refreshTokenValidator = validate(
   })
 )
 
-export const resendEmailVerifyValidator = validate(
-  checkSchema({
-    email: emailSchema
-  })
-)
-
 export const forgotPasswordValidator = validate(
   checkSchema({
     email: emailSchema
@@ -98,7 +92,7 @@ export const resetPasswordValidator = validate(
   })
 )
 
-export const verifyEmailValidator = validate(
+export const verifyEmailTokenValidator = validate(
   checkSchema({
     email_verify_token: {
       in: ['body'],

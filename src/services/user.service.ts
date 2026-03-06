@@ -105,8 +105,18 @@ export class UserService {
       // Todo: Gửi email xác thực
       // await EmailService.sendVerificationEmail(user.email, emailVerifyToken)
 
+      const tokens = JWTUtils.generateTokens({ userId, email: user.email })
+
+      await RefreshTokenModel.create({
+        user_id: user._id!,
+        token: tokens.refreshToken,
+        expires_at: this.getExpiresAt()
+      })
+
       return {
-        user: UserModel.toResponse(user)
+        user: UserModel.toResponse(user),
+        access_token: tokens.accessToken,
+        refresh_token: tokens.refreshToken
       }
     } catch (error: any) {
       if (error instanceof HttpException) throw error
@@ -196,13 +206,6 @@ export class UserService {
       throw new HttpException({
         status: HTTP_STATUS.UNAUTHORIZED,
         message: AUTH_MESSAGES.INVALID_USER_CREDENTIALS
-      })
-    }
-
-    if (user.status === UserStatus.Unverified) {
-      throw new HttpException({
-        status: HTTP_STATUS.UNAUTHORIZED,
-        message: AUTH_MESSAGES.EMAIL_NOT_VERIFIED
       })
     }
 
@@ -325,9 +328,9 @@ export class UserService {
   }
 
   /**
-   * Verify email
+   * Verify email Token
    */
-  async verifyEmail(userId: string) {
+  async verifyEmailToken(userId: string) {
     const user = await UserModel.findById(userId)
 
     if (!user) {
@@ -337,7 +340,7 @@ export class UserService {
       })
     }
 
-    if (user.status === UserStatus.Verified) {
+    if (user.status === UserStatus.Verified || !user.email_verify_token) {
       throw new HttpException({
         status: HTTP_STATUS.BAD_REQUEST,
         message: AUTH_MESSAGES.EMAIL_ALREADY_VERIFIED
@@ -378,8 +381,8 @@ export class UserService {
   /**
    * Resend email verification (tạo token mới và gửi lại)
    */
-  async resendEmailVerify(email: string): Promise<void> {
-    const user = await UserModel.findByEmail(email)
+  async resendEmailVerify(userId: string): Promise<void> {
+    const user = await UserModel.findById(userId)
 
     if (!user) {
       throw new HttpException({
