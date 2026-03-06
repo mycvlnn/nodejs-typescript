@@ -137,9 +137,9 @@ export class UserController extends BaseController {
   })
 
   /**
-   * Get current user profile
+   * Get Me
    */
-  getProfile = wrapRequestHandler(async (req: Request, res: Response) => {
+  getMe = wrapRequestHandler(async (req: Request, res: Response) => {
     const userId = req.access_token_decoded?.userId
 
     if (!userId) {
@@ -214,5 +214,5 @@ export const {
   resetPassword,
   logout,
   logoutAll,
-  getProfile
+  getMe
 } = userController
