@@ -7,6 +7,7 @@ import { HttpException } from '~/core/http-exception.js'
 import {
   DecodedToken,
   EmailVerifyTokenPayload,
+  ForgotPasswordTokenPayload,
   SignAccessTokenParams,
   SignRefreshTokenParams,
   SignTokenParams,
@@ -27,6 +28,40 @@ export class JWTUtils {
       secretOrPrivateKey: envConfig.jwtEmailVerificationTokenSecret,
       expiresIn: envConfig.jwtEmailVerificationTokenExpiresIn
     })
+  }
+
+  static generateForgotPasswordToken(payload: ForgotPasswordTokenPayload): string {
+    return this.signToken({
+      payload: {
+        email: payload.email,
+        userId: payload.userId
+      },
+      secretOrPrivateKey: envConfig.jwtForgotPasswordTokenSecret,
+      expiresIn: envConfig.jwtForgotPasswordTokenExpiresIn
+    })
+  }
+
+  static verifyForgotPasswordToken(token: string): DecodedToken {
+    try {
+      return jwt.verify(token, envConfig.jwtForgotPasswordTokenSecret) as DecodedToken
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new HttpException({
+          status: HTTP_STATUS.UNAUTHORIZED,
+          message: TOKEN_MESSAGES.FORGOT_PASSWORD_TOKEN_EXPIRED
+        })
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new HttpException({
+          status: HTTP_STATUS.UNAUTHORIZED,
+          message: TOKEN_MESSAGES.INVALID_FORGOT_PASSWORD_TOKEN
+        })
+      }
+      throw new HttpException({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: TOKEN_MESSAGES.FORGOT_PASSWORD_TOKEN_VERIFICATION_FAILED
+      })
+    }
   }
 
   static verifyEmailVerifyToken(token: string): DecodedToken {

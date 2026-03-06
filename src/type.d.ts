@@ -10,6 +10,7 @@ declare global {
       access_token_decoded?: DecodedToken
       refresh_token_decoded?: DecodedToken
       email_verify_token_decoded?: DecodedToken
+      forgot_password_token_decoded?: DecodedToken
     }
   }
 }

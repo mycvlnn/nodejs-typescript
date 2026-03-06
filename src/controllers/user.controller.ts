@@ -160,6 +160,24 @@ export class UserController extends BaseController {
     })
   })
 
+  // Controller xử lý forgot password
+  forgotPassword = wrapRequestHandler(async (req: Request, res: Response) => {
+    const { email } = req.body
+    await this.userService.forgotPassword(email)
+    this.sendSuccess(res, {
+      message: AUTH_MESSAGES.FORGOT_PASSWORD_SUCCESS
+    })
+  })
+
+  // Controller xử lý reset password
+  resetPassword = wrapRequestHandler(async (req: Request, res: Response) => {
+    const { forgot_password_token, new_password } = req.body
+    await this.userService.resetPassword(forgot_password_token, new_password)
+    this.sendSuccess(res, {
+      message: AUTH_MESSAGES.RESET_PASSWORD_SUCCESS
+    })
+  })
+
   // Controller xử lý xác thực email
   verifyEmail = wrapRequestHandler(async (req: Request, res: Response) => {
     const { userId } = req.email_verify_token_decoded || {}
@@ -192,6 +210,8 @@ export const {
   refreshToken,
   verifyEmail,
   resendEmailVerify,
+  forgotPassword,
+  resetPassword,
   logout,
   logoutAll,
   getProfile
