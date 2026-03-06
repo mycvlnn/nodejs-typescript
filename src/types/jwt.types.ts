@@ -26,3 +26,4 @@ export interface DecodedToken extends TokenPayload {
 }
 
 export type EmailVerifyTokenPayload = Omit<TokenPayload, 'type'>
+export type ForgotPasswordTokenPayload = Omit<TokenPayload, 'type'>

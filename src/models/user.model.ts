@@ -130,6 +130,27 @@ export class UserModel {
   }
 
   /**
+   * Cập nhật forgot_password_token cho user
+   */
+  static async updateForgotPasswordToken(id: string | ObjectId, token: string): Promise<void> {
+    const objectId = typeof id === 'string' ? new ObjectId(id) : id
+    await this.getCollection().updateOne(
+      { _id: objectId },
+      {
+        $set: { forgot_password_token: token },
+        $currentDate: { updated_at: true }
+      }
+    )
+  }
+
+  /**
+   * Tìm user theo forgot_password_token
+   */
+  static async findByForgotPasswordToken(token: string): Promise<IUser | null> {
+    return await this.getCollection().findOne({ forgot_password_token: token })
+  }
+
+  /**
    * Xóa user theo ID
    */
   static async deleteById(id: string | ObjectId): Promise<boolean> {

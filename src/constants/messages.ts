@@ -71,7 +71,12 @@ export const AUTH_MESSAGES = {
   EMAIL_ALREADY_VERIFIED: 'Email is already verified',
   RESEND_EMAIL_VERIFY_SUCCESS: 'Verification email has been resent. Please check your inbox.',
   FAILED_TO_VERIFY_EMAIL: 'Failed to verify email',
-  ONLY_OWNER_CAN_UPDATE_PROFILE: 'You can only update your own profile'
+  ONLY_OWNER_CAN_UPDATE_PROFILE: 'You can only update your own profile',
+
+  // Forgot Password
+  FORGOT_PASSWORD_SUCCESS: 'Password reset email has been sent. Please check your inbox.',
+  RESET_PASSWORD_SUCCESS: 'Password has been reset successfully. Please login again.',
+  FORGOT_PASSWORD_TOKEN_NOT_FOUND: 'Forgot password token not found or already used'
 } as const
 
 export const TOKEN_ERROR_NAMES = {
@@ -102,5 +107,11 @@ export const TOKEN_MESSAGES = {
   EMAIL_VERIFY_TOKEN_EXPIRED: 'Email verification token has expired',
   EMAIL_VERIFY_TOKEN_VERIFICATION_FAILED: 'Email verification token verification failed',
 
-  TOKEN_REFRESH_SUCCESS: 'Token refreshed successfully'
+  TOKEN_REFRESH_SUCCESS: 'Token refreshed successfully',
+
+  // Forgot Password Token
+  FORGOT_PASSWORD_TOKEN_REQUIRED: 'Forgot password token is required',
+  INVALID_FORGOT_PASSWORD_TOKEN: 'Invalid forgot password token',
+  FORGOT_PASSWORD_TOKEN_EXPIRED: 'Forgot password token has expired',
+  FORGOT_PASSWORD_TOKEN_VERIFICATION_FAILED: 'Forgot password token verification failed'
 }

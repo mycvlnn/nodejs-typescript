@@ -102,6 +102,9 @@ export class UserService {
       // Tạo user mới
       const user = await UserModel.create(userPayload)
 
+      // Todo: Gửi email xác thực
+      // await EmailService.sendVerificationEmail(user.email, emailVerifyToken)
+
       return {
         user: UserModel.toResponse(user)
       }
@@ -402,5 +405,56 @@ export class UserService {
 
     // TODO: Gửi email xác thực
     // await EmailService.sendVerificationEmail(user.email, newEmailVerifyToken)
+  }
+
+  /**
+   * Forgot Password - tạo token và gửi email reset password
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const user = await UserModel.findByEmail(email)
+
+    // Không tiết lộ email có tồn tại hay không (tránh user enumeration attack)
+    if (!user) return
+
+    if (user.status === UserStatus.Unverified) {
+      throw new HttpException({
+        status: HTTP_STATUS.FORBIDDEN,
+        message: AUTH_MESSAGES.EMAIL_NOT_VERIFIED
+      })
+
+      // Có thể cân nhắc gửi lại email xác thực ở đây nếu user chưa verify email
+    }
+
+    const forgotPasswordToken = JWTUtils.generateForgotPasswordToken({
+      userId: user._id!.toString(),
+      email: user.email
+    })
+
+    await UserModel.updateForgotPasswordToken(user._id!, forgotPasswordToken)
+
+    // TODO: Gửi email reset password kèm link có dạng https://yourdomain.com/reset-password?token=forgotPasswordToken
+    // await EmailService.sendResetPasswordEmail(user.email, forgotPasswordToken)
+  }
+
+  /**
+   * Reset Password - xác thực token và cập nhật mật khẩu mới
+   */
+  async resetPassword(forgotPasswordToken: string, newPassword: string): Promise<void> {
+    const user = await UserModel.findByForgotPasswordToken(forgotPasswordToken)
+
+    if (!user) {
+      throw new HttpException({
+        status: HTTP_STATUS.NOT_FOUND,
+        message: AUTH_MESSAGES.FORGOT_PASSWORD_TOKEN_NOT_FOUND
+      })
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+    await Promise.all([
+      UserModel.updateById(user._id!, { password: hashedPassword }),
+      UserModel.updateForgotPasswordToken(user._id!, ''), // Xóa token sau khi dùng (one-time use)
+      RefreshTokenModel.deleteAllByUserId(user._id!.toString()) // Logout tất cả thiết bị
+    ])
   }
 }

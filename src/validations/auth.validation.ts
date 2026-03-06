@@ -77,6 +77,69 @@ export const resendEmailVerifyValidator = validate(
   })
 )
 
+export const forgotPasswordValidator = validate(
+  checkSchema({
+    email: {
+      in: ['body'],
+      notEmpty: {
+        errorMessage: USER_MESSAGES.EMAIL_REQUIRED
+      },
+      isEmail: {
+        errorMessage: USER_MESSAGES.EMAIL_INVALID
+      }
+    }
+  })
+)
+
+export const resetPasswordValidator = validate(
+  checkSchema({
+    forgot_password_token: {
+      in: ['body'],
+      custom: {
+        options: (value: string, { req }) => {
+          if (!value?.trim()) {
+            throw new HttpException({
+              status: HTTP_STATUS.UNAUTHORIZED,
+              message: TOKEN_MESSAGES.FORGOT_PASSWORD_TOKEN_REQUIRED
+            })
+          }
+          const decoded = JWTUtils.verifyForgotPasswordToken(value)
+          ;(req as Request).forgot_password_token_decoded = decoded
+          return true
+        }
+      }
+    },
+    new_password: {
+      in: ['body'],
+      notEmpty: {
+        errorMessage: USER_MESSAGES.PASSWORD_REQUIRED
+      },
+      isLength: {
+        options: { min: 6, max: 50 },
+        errorMessage: USER_MESSAGES.PASSWORD_LENGTH
+      },
+      isStrongPassword: {
+        options: { minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 },
+        errorMessage: USER_MESSAGES.PASSWORD_NOT_STRONG_ENOUGH
+      }
+    },
+    confirm_new_password: {
+      in: ['body'],
+      notEmpty: {
+        errorMessage: USER_MESSAGES.PASSWORD_CONFIRM_REQUIRED
+      },
+      custom: {
+        options: (value: string, { req }) => {
+          if (value !== req.body.new_password) {
+            throw new Error(USER_MESSAGES.PASSWORDS_DO_NOT_MATCH)
+          }
+          return true
+        }
+      }
+    }
+  })
+)
+
 export const verifyEmailValidator = validate(
   checkSchema({
     email_verify_token: {
